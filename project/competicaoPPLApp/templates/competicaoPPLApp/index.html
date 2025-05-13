@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competição PPL</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            text-align: center;
+            padding: 2em;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #0056b3;
+            margin-bottom: 0.5em;
+        }
+        p {
+            font-size: 1.1em;
+            margin-bottom: 1.5em;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.8em 1.5em;
+            font-size: 1em;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bem-vindo à Competição de Programação Linear!</h1>
+        <p>Estamos felizes em ter você aqui. Prepare seus problemas e vamos otimizar!</p>
+        <a href="{% url 'parte1' %}" class="btn">Participar Agora</a>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competição PPL - Parte 1</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2em;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex; /* Use flexbox for centering */
+            flex-direction: column; /* Stack elements vertically */
+            align-items: center; /* Center items horizontally */
+            min-height: 90vh; /* Ensure body takes height */
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center; /* Center heading */
+            margin-bottom: 1em;
+        }
+        .fill-gap-question {
+            text-align: left; /* Center text within the paragraph */
+            margin-bottom: 1.5em; /* Add some space below */
+            font-size: 1.1em; /* Slightly larger text */
+            line-height: 1.6; /* Improve readability */
+            max-width: 600px; /* Limit width for better centering */
+            width: 100%; /* Ensure it takes up available width */
+        }
+
+        .fill-gap-question input[type="text"] {
+            padding: 5px 5px; /* Add padding inside the input */
+            border: 1px solid #ccc; /* Subtle border */
+            border-radius: 4px; /* Rounded corners */
+            font-size: 1em; /* Match surrounding text size */
+            margin: 0 5px; /* Add small space around the input */
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); /* Subtle inner shadow */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
+            width: 150px; /* Adjust width as needed */
+        }
+
+        .fill-gap-question input[type="text"]:focus {
+            border-color: #007bff; /* Highlight border on focus */
+            outline: none; /* Remove default browser outline */
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5), inset 0 1px 3px rgba(0,0,0,0.1); /* Add glow effect */
+        }
+
+        .fill-gap-question input[type="number"] {
+            padding: 5px 5px; /* Add padding inside the input */
+            border: 1px solid #ccc; /* Subtle border */
+            border-radius: 4px; /* Rounded corners */
+            font-size: 1em; /* Match surrounding text size */
+            margin: 0 5px; /* Add small space around the input */
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); /* Subtle inner shadow */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
+            width: 150px; /* Adjust width as needed */
+        }
+
+        .fill-gap-question input[type="number"]:focus {
+            border-color: #007bff; /* Highlight border on focus */
+            outline: none; /* Remove default browser outline */
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5), inset 0 1px 3px rgba(0,0,0,0.1); /* Add glow effect */
+        }
+
+        .fill-gap-question select {
+            padding: 5px 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+            margin: 0 5px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            width: 150px; /* Adjust width to match others */
+            background-color: #fff; /* Ensure background is white */
+            cursor: pointer;
+        }
+
+        .fill-gap-question select:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5), inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Add more specific styles for this page if needed */
+    </style>
+</head>
+<body>
+    <h1>Parte 1</h1>
+    <!-- Wrap the question in a div for better control -->
+     <h2>Complete as lacunas abaixo:</h2>
+    <div class="fill-gap-question">
+        A empresa nos contratou para
+        <select id="objetivo" name="objetivo">
+            <option value="" selected disabled>--Selecione--</option> 
+            <option value="maximizar">maximizar</option>
+            <option value="minimizar">minimizar</option>
+        </select>
+        seu objetivo. Ela possui
+        <input type="number" id="variaveis" name="variaveis"> 
+        variáveis de decisão e
+        <input type="number" id="restricoes" name="restricoes"> 
+        restrições.
+    </div>
+      
+    <a href="{% url 'index' %}">Voltar para o Início</a>
+    
+</body>
+</html> 
