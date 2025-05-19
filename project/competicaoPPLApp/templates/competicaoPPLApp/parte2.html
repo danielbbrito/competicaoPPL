@@ -91,18 +91,20 @@
      <h2>Complete as lacunas abaixo de acordo com o seu problema de programação linear digitado na parte 1. 
         Caso haja alguma dúvida quanto ao preenchimento você poderá consultar o sistema Dicas. Mais dicas, menor nota na competição.</h2>
     <div class="fill-gap-question">
-        <form>
-        A empresa nos contratou para
-        <select id="objetivo" name="objetivo">
-            <option value="" selected disabled>--Selecione--</option> 
-            <option value="maximizar">maximizar</option>
-            <option value="minimizar">minimizar</option>
-        </select>
-        seu objetivo. Ela possui
-        <input type="number" id="variaveis" name="variaveis"> 
-        variáveis de decisão e
-        <input type="number" id="restricoes" name="restricoes"> 
-        restrições.
+        <form action="{% url 'parte3' %}" method="post">
+            {% csrf_token %}
+            A empresa nos contratou para
+            <select id="objetivo" name="objetivo">
+                <option value="" selected disabled>--Selecione--</option> 
+                <option value="maximizar">maximizar</option>
+                <option value="minimizar">minimizar</option>
+            </select>
+            seu objetivo. Ela possui
+            <input type="number" id="variaveis" name="variaveis"> 
+            variáveis de decisão e
+            <input type="number" id="restricoes" name="restricoes"> 
+            restrições.
+            <button type="submit">Continuar</button>
         </form>
     </div>
       

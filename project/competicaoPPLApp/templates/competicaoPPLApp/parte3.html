@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competição PPL - Parte 3</title>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: sans-serif; /* MathJax will handle math fonts */
+            padding: 2em;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 90vh;
+        }
+        h1, h2 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 1em;
+        }
+        .math-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            width: 80%;
+            max-width: 800px;
+            font-size: 1.1em; /* Slightly larger base font for readability */
+        }
+        .math-input {
+            width: 50px;
+            padding: 5px;
+            margin: 0 3px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            font-family: inherit; /* Inherit from body, or MathJax might override */
+            font-size: 0.9em; /* Relative to parent */
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .math-input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+        .operator-select {
+            min-width: 45px;
+            padding: 5px;
+            margin: 0 3px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            font-family: inherit;
+            font-size: 0.9em;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 30px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #003d82;
+        }
+        .equation-section {
+            margin-bottom: 25px;
+        }
+        .equation-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .math-expression-row {
+            margin-bottom: 10px; /* Space between rows of math */
+            line-height: 2.5; /* Increased line height for inputs in math */
+        }
+
+        /* Forcing MathJax to re-render if needed, though usually automatic */
+        .mjx-chtml {
+            display: inline-block; /* Helps with alignment */
+        }
+    </style>
+</head>
+<body>
+    <h1>Parte 3</h1>
+    <h2>Complete o modelo de programação linear.</h2>
+    
+    <div class="math-container">
+        <form id="pplForm">
+            <div class="equation-section">
+                <div class="math-expression-row">
+                    \( {{ sTipoDeObjetivo|capfirst }} \quad  \)
+                    {% for i in rangeVariaveis %}
+                        <input type="number" class="math-input" id="c{{ i }}" name="c{{ i }}" value="1">
+                        \( x_{{ i }} \)
+                        {% if not forloop.last %}
+                            <select class="operator-select" id="op_obj_{{ i }}" name="op_obj_{{ i }}">
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                            </select>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="equation-section">
+                
+                {% for j in rangeRestricoes %}
+                <div class="math-expression-row" id="restricao_{{ j }}">
+                    {% if forloop.first %}
+                        <span style="margin-right: 5px;">\( \text{Sujeito a:} \)</span>
+                    {% else %}
+                        <span style="display: inline-block; width: 90px; /* Adjust width to match approx 'Sujeito a:' */"></span>
+                    {% endif %}
+                    {% for i in rangeVariaveis %}
+                        <input type="number" class="math-input" id="a{{ j }}{{ i }}" name="a{{ j }}{{ i }}" value="1">
+                        \( x_{{ i }} \)
+                        {% if not forloop.last %}
+                            <select class="operator-select" id="op_rst_{{ j }}_{{ i }}" name="op_rst_{{ j }}_{{ i }}">
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                            </select>
+                        {% endif %}
+                    {% endfor %}
+                    <select class="operator-select math-inequality" id="ineq{{ j }}" name="ineq{{ j }}">
+                        <option value="\le">\( \le \)</option>
+                        <option value="\ge">\( \ge \)</option>
+                        <option value="=">\( = \)</option>
+                    </select>
+                    <input type="number" class="math-input" id="b{{ j }}" name="b{{ j }}" value="1">
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="equation-section">
+                <div class="math-expression-row">
+                    \( 
+                    {% for i in rangeVariaveis %}
+                        x_{{ i }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                    \ge 0 
+                    \)
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <button type="button" onclick="verificarResposta()">Verificar Resposta</button>
+    <a href="{% url 'index' %}">Voltar para o Início</a>
+
+    <script>
+        window.MathJax = {
+          tex: {
+            inlineMath: [['\\(', '\\)'], ['$', '$']], // Define $...$ and \(...\) as inline math
+            displayMath: [['\\[', '\\]'], ['$$', '$$']], // Define $$...$$ and \[...\] as display math
+            processEscapes: true
+          },
+          startup: {
+            ready: () => {
+              MathJax.startup.defaultReady();
+              // You could add a MathJax.typeset() call here if needed after dynamic content loading
+              // but with Django templates, it should render on initial load.
+            }
+          }
+        };
+
+        window.onload = function() {
+            console.log("Página carregada. MathJax should process a Carga da página e estrutura dinâmica gerada.");
+            // If MathJax is not typesetting automatically after Django renders the template,
+            // uncomment the line below. Usually, it should not be necessary.
+            // MathJax.typeset(); 
+        };
+
+        function verificarResposta() {
+            const oDadosDoFormulario = {};
+            oDadosDoFormulario.sTipoDeObjetivo = "{{ sTipoDeObjetivo }}";
+            
+            oDadosDoFormulario.coeficientesObjetivo = [];
+            oDadosDoFormulario.operadoresObjetivo = [];
+            document.querySelectorAll('#pplForm .equation-section:nth-child(1) .math-input[id^="c"]').forEach(input => {
+                oDadosDoFormulario.coeficientesObjetivo.push(input.value || "0");
+            });
+            document.querySelectorAll('#pplForm .equation-section:nth-child(1) .operator-select[id^="op_obj_"]').forEach(select => {
+                oDadosDoFormulario.operadoresObjetivo.push(select.value);
+            });
+
+            oDadosDoFormulario.restricoes = [];
+            const nNumeroDeRestricoes = parseInt("{{ nNumeroDeRestricoes }}");
+            for (let j = 1; j <= nNumeroDeRestricoes; j++) {
+                const oRestricao = { coeficientes: [], operadores: [], inequacao: '', termoDireito: '' };
+                document.querySelectorAll(`#restricao_${j} .math-input[id^="a${j}"]`).forEach(input => {
+                    oRestricao.coeficientes.push(input.value || "0");
+                });
+                document.querySelectorAll(`#restricao_${j} .operator-select[id^="op_rst_${j}_"]`).forEach(select => {
+                    oRestricao.operadores.push(select.value);
+                });
+                const elIneq = document.getElementById(`ineq${j}`);
+                if(elIneq) oRestricao.inequacao = elIneq.value;
+                const elB = document.getElementById(`b${j}`);
+                if(elB) oRestricao.termoDireito = elB.value || "0";
+                oDadosDoFormulario.restricoes.push(oRestricao);
+            }
+            
+            console.log("Dados coletados para verificação:", JSON.stringify(oDadosDoFormulario, null, 2));
+            alert("Verificação da resposta (veja console para dados). Ainda não implementada a lógica de validação.");
+        }
+    </script>
+</body>
+</html> 
