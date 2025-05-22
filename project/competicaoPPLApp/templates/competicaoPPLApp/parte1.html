@@ -107,34 +107,31 @@
         }
 
         /* Button styles */
-        .fill-gap-question button {
+        .fill-gap-question form button[type="submit"] {
             display: block;
-            margin: 20px auto;
+            margin: 20px auto; /* Centers the button and adds space */
             padding: 12px 30px;
             background-color: #0056b3;
+            color: white; /* Text color */
             border: none;
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none; /* In case any default browser styles apply */
         }
 
-        .fill-gap-question button:hover {
+        .fill-gap-question form button[type="submit"]:hover {
             background-color: #003d82;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
-        .fill-gap-question button:active {
+        .fill-gap-question form button[type="submit"]:active {
             transform: translateY(0);
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .fill-gap-question button a {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: 500;
         }
 
         /* Add more specific styles for this page if needed */
@@ -145,8 +142,12 @@
     <!-- Wrap the question in a div for better control -->
      <h2>Digite seu problema de programação linear. Preste atenção no que está digitando.</h2>
     <div class="fill-gap-question">
-        <textarea id="problema" name="problema" placeholder="Digite seu problema de programação linear aqui..."></textarea>
-        <button type="button" onclick="submitProblema()"><a href="{% url 'parte2' %}">Continuar</a></button>
+        
+        <form action="{% url 'parte2' %}" method="post">
+            {% csrf_token %}
+            <textarea id="problema" name="problema" placeholder="Digite seu problema de programação linear aqui..."></textarea>
+            <button type="submit">Continuar</button>
+        </form>
     </div>
 
       

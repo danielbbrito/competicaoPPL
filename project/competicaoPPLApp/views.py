@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 # Create your views here.
 def index(request):
     # return HttpResponse("Hello, World!")
@@ -11,7 +11,15 @@ def parte1(request):
     return render(request, "competicaoPPLApp/parte1.html")
 
 def parte2(request):
-    return render(request, "competicaoPPLApp/parte2.html")
+    if request.method == "POST":
+        sRespostaProblema = request.POST.get("problema", "")
+        if sRespostaProblema == "":
+            redirect("parte1")
+
+        return render(request, "competicaoPPLApp/parte2.html", {"sRespostaProblema": sRespostaProblema}) 
+        
+
+    return HttpResponseForbidden("Não é possível acessar esta página. Voce deve enviar o formulario da parte 1 antes")
 
 def parte3(request):
     if request.method == "POST":
@@ -33,6 +41,16 @@ def parte3(request):
         except ValueError:
             nNumeroDeRestricoes = 2
         
+        try:
+            nNumeroDicasUtilizadas = int(request.POST.get("dicas", 0))
+        except ValueError:
+            nNumeroDicasUtilizadas = 0
+
+        try:
+            sRespostaProblema = request.POST.get("problema", "")
+        except ValueError:
+            sRespostaProblema = ""
+
         nNumeroDeVariaveis = max(1, nNumeroDeVariaveis)
         nNumeroDeRestricoes = max(1, nNumeroDeRestricoes)
 
@@ -41,18 +59,26 @@ def parte3(request):
             "nNumeroDeVariaveis": nNumeroDeVariaveis,
             "nNumeroDeRestricoes": nNumeroDeRestricoes,
             "rangeVariaveis": range(1, nNumeroDeVariaveis + 1),
-            "rangeRestricoes": range(1, nNumeroDeRestricoes + 1)
+            "rangeRestricoes": range(1, nNumeroDeRestricoes + 1),
+            "nNumeroDicasUtilizadas": nNumeroDicasUtilizadas,
+            "sRespostaProblema": sRespostaProblema
         }
+        print("dicas ", nNumeroDicasUtilizadas)
         return render(request, "competicaoPPLApp/parte3.html", contexto)
     
-    contexto = {
-        "sTipoDeObjetivo": "maximizar", # Default for GET
-        "nNumeroDeVariaveis": 2,
-        "nNumeroDeRestricoes": 2,
-        "rangeVariaveis": range(1, 3),
-        "rangeRestricoes": range(1, 3)
-    }
-    return render(request, "competicaoPPLApp/parte3.html", contexto)
-
+    else:
+        return HttpResponseForbidden("Não é possível acessar esta página. Voce deve enviar o formulario da parte 2 antes")
     
+
+def submit_final(request):
+    if request.method == "POST":
+        sRespostaProblema = request.POST.get("problema_original_text")
+        sObjetivoSelecionado = request.POST.get("objetivo_selecionado")
+        nNumeroTotalVariaveis = request.POST.get("numero_total_variaveis")
+        nNumeroTotalRestricoes = request.POST.get("numero_total_restricoes")
+        nQuantidadeDicasUsadas = request.POST.get("quantidade_dicas_usadas")
+
+        print("Resposta do problema: ", sRespostaProblema)
+        print("Objetivo selecionado: ", sObjetivoSelecionado)
+        print("Número total de variáveis: ", nNumeroTotalVariaveis)
     

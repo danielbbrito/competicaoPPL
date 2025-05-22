@@ -98,7 +98,15 @@
     <h2>Complete o modelo de programação linear.</h2>
     
     <div class="math-container">
-        <form id="pplForm">
+        <form id="pplForm" method="POST" action="{% url 'submit_final' %}">
+            {% csrf_token %}
+
+            <input type="hidden" name="problema_original_text" value="{{ problema_original }}">
+            <input type="hidden" name="objetivo_selecionado" value="{{ objetivo_tipo }}">
+            <input type="hidden" name="numero_total_variaveis" value="{{ num_variaveis }}">
+            <input type="hidden" name="numero_total_restricoes" value="{{ num_restricoes }}">
+            <input type="hidden" name="quantidade_dicas_usadas" value="{{ num_dicas_usadas }}">
+            
             <div class="equation-section">
                 <div class="math-expression-row">
                     \( {{ sTipoDeObjetivo|capfirst }} \quad  \)
@@ -157,7 +165,7 @@
         </form>
     </div>
 
-    <button type="button" onclick="verificarResposta()">Verificar Resposta</button>
+    <button type="submit">Verificar Resposta</button>
     <a href="{% url 'index' %}">Voltar para o Início</a>
 
     <script>
@@ -178,8 +186,6 @@
 
         window.onload = function() {
             console.log("Página carregada. MathJax should process a Carga da página e estrutura dinâmica gerada.");
-            // If MathJax is not typesetting automatically after Django renders the template,
-            // uncomment the line below. Usually, it should not be necessary.
             // MathJax.typeset(); 
         };
 
@@ -213,9 +219,19 @@
                 oDadosDoFormulario.restricoes.push(oRestricao);
             }
             
-            console.log("Dados coletados para verificação:", JSON.stringify(oDadosDoFormulario, null, 2));
-            alert("Verificação da resposta (veja console para dados). Ainda não implementada a lógica de validação.");
+            console.log("Dados coletados (antes da submissão):", JSON.stringify(oDadosDoFormulario, null, 2));
+            // alert("Verificação da resposta (veja console para dados). Ainda não implementada a lógica de validação.");
         }
+
+        // Optional: Add an event listener to the form for client-side validation if needed
+        // document.getElementById('pplForm').addEventListener('submit', function(event) {
+        //     // Call a validation function. If it returns false, prevent submission:
+        //     // if (!validateFormClientSide()) {
+        //     //     event.preventDefault();
+        //     // }
+        //     // You can also call verificarResposta() here if you want to log data before submission
+        //     verificarResposta(); 
+        // });
     </script>
 </body>
 </html> 

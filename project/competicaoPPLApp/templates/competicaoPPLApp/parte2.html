@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Competição PPL - Parte 1</title>
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.16.1/sweetalert2.min.css">
     <style>
         body {
             font-family: sans-serif;
@@ -83,6 +85,61 @@
         }
 
         /* Add more specific styles for this page if needed */
+        .tooltip-icon {
+            display: inline-block;
+            margin-left: 5px; /* Adjusted margin for inline elements */
+            cursor: pointer;
+            color: #007bff;
+            font-weight: bold;
+            border: 1px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px; 
+            font-size: 14px;
+            user-select: none;
+            vertical-align: middle; /* Align icon with the middle of the text/input */
+        }
+
+        .tooltip-icon:hover {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .input-wrapper {
+            display: inline-block; 
+            vertical-align: middle; 
+            margin-right: 5px; 
+        }
+
+        /* Button styles to match parte1.html */
+        .fill-gap-question form button[type="submit"] {
+            display: block;
+            margin: 20px auto; /* Centers the button and adds space */
+            padding: 12px 30px;
+            background-color: #0056b3;
+            color: white; /* Text color */
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none; /* In case any default browser styles apply */
+        }
+
+        .fill-gap-question form button[type="submit"]:hover {
+            background-color: #003d82;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .fill-gap-question form button[type="submit"]:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
@@ -94,22 +151,82 @@
         <form action="{% url 'parte3' %}" method="post">
             {% csrf_token %}
             A empresa nos contratou para
-            <select id="objetivo" name="objetivo">
-                <option value="" selected disabled>--Selecione--</option> 
-                <option value="maximizar">maximizar</option>
-                <option value="minimizar">minimizar</option>
-            </select>
+            <span class="input-wrapper">
+                <select id="objetivo" name="objetivo">
+                    <option value="" selected disabled>--Selecione--</option> 
+                    <option value="maximizar">maximizar</option>
+                    <option value="minimizar">minimizar</option>
+                </select>
+                <span class="tooltip-icon" id=1 title="Minimizar ou maximizar? Verifique o objetivo da empresa: ela quer gastar menos ou ganhar mais; ela quer o menor tempo ou o maior tempo; ela quer o caminho mais curto ou o caminho mais longo, etc.?">?</span>
+            </span>
             seu objetivo. Ela possui
-            <input type="number" id="variaveis" name="variaveis"> 
+            <span class="input-wrapper">
+                <input type="number" id="variaveis" name="variaveis">
+                <span class="tooltip-icon" id=2 title="Para atingir o objetivo da empresa o que você deverá sugerir? Verifique as variáveis de decisão do problema: ela deverá decidir quanto tranportar de uma cidade para outra; quanto produzir de uma mercadoria; quanto aplicar de um capital, etc.? Conte o número de variáveis de decisão.">?</span>
+            </span>
             variáveis de decisão e
-            <input type="number" id="restricoes" name="restricoes"> 
+            <span class="input-wrapper">
+                <input type="number" id="restricoes" name="restricoes">
+                <span class="tooltip-icon" id=3 title="Para atingir o objetivo da empresa existem restrições sobre o problema? Verifique as restrições de igualdade ou desigualdades lineares: cada restrição é devida à satisfação de alguma demanda, ou oferta, ou capacidade, ou necessidade, ou disponibilidade, etc.? Conte o número de restrições.">?</span>
+            </span>
             restrições.
-            <button type="submit">Continuar</button>
+            <input type="hidden" name="dicas" id="dicas" value=0>
+            <input type="hidden" name="problema" id="problema" value="{{ sRespostaProblema }}">
+            <button type="submit" id="continuar-btn">Continuar</button>
         </form>
     </div>
       
     <a href="{% url 'index' %}">Voltar para o Início</a>
     
-    
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.16.1/sweetalert2.all.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tooltipIcons = document.querySelectorAll('.tooltip-icon');
+            const objetivoInput = document.getElementById('objetivo');
+            const variaveisInput = document.getElementById('variaveis');
+            const restricoesInput = document.getElementById('restricoes');
+            const continuarBtn = document.getElementById('continuar-btn');
+
+            function checkInputsAndToggleButton() {
+                const objetivoValido = objetivoInput.value !== "";
+                const variaveisValido = variaveisInput.value !== "";
+                const restricoesValido = restricoesInput.value !== "";
+
+                if (objetivoValido && variaveisValido && restricoesValido) {
+                    continuarBtn.disabled = false;
+                } else {
+                    continuarBtn.disabled = true;
+                }
+            }
+
+            // Initial check and disable button
+            checkInputsAndToggleButton(); 
+
+            tooltipIcons.forEach(icon => {
+                icon.addEventListener('click', function () {
+                    const clue = this.getAttribute('title');
+                    const id = this.getAttribute("id");
+                    var nQuantidadeDicas = document.getElementById("dicas").value;
+                    nQuantidadeDicas = parseInt(nQuantidadeDicas) + 1;
+                    document.getElementById("dicas").value = nQuantidadeDicas;
+                    if (clue) {
+                        Swal.fire({
+                            title: 'Dica!',
+                            text: clue,
+                            icon: 'info',
+                            confirmButtonText: 'Entendi'
+                        });
+                    }
+                });
+            });
+
+            // Add event listeners to inputs
+            [objetivoInput, variaveisInput, restricoesInput].forEach(input => {
+                input.addEventListener('input', checkInputsAndToggleButton);
+                input.addEventListener('change', checkInputsAndToggleButton); // For select and in case input event doesn't cover all changes
+            });
+        });
+    </script>
 </body>
 </html> 
