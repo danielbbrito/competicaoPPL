@@ -154,8 +154,8 @@
             <span class="input-wrapper">
                 <select id="objetivo" name="objetivo">
                     <option value="" selected disabled>--Selecione--</option> 
-                    <option value="maximizar">maximizar</option>
-                    <option value="minimizar">minimizar</option>
+                    <option value=0>maximizar</option>
+                    <option value=1>minimizar</option>
                 </select>
                 <span class="tooltip-icon" id=1 title="Minimizar ou maximizar? Verifique o objetivo da empresa: ela quer gastar menos ou ganhar mais; ela quer o menor tempo ou o maior tempo; ela quer o caminho mais curto ou o caminho mais longo, etc.?">?</span>
             </span>
@@ -171,7 +171,7 @@
             </span>
             restrições.
             <input type="hidden" name="dicas" id="dicas" value=0>
-            <input type="hidden" name="problema" id="problema" value="{{ sRespostaProblema }}">
+            <input type="hidden" name="problema" id="problema" value="{{ sProblema }}">
             <button type="submit" id="continuar-btn">Continuar</button>
         </form>
     </div>

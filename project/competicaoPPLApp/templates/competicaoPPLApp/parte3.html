@@ -100,12 +100,12 @@
     <div class="math-container">
         <form id="pplForm" method="POST" action="{% url 'submit_final' %}">
             {% csrf_token %}
-
-            <input type="hidden" name="problema_original_text" value="{{ problema_original }}">
-            <input type="hidden" name="objetivo_selecionado" value="{{ objetivo_tipo }}">
-            <input type="hidden" name="numero_total_variaveis" value="{{ num_variaveis }}">
-            <input type="hidden" name="numero_total_restricoes" value="{{ num_restricoes }}">
-            <input type="hidden" name="quantidade_dicas_usadas" value="{{ num_dicas_usadas }}">
+            <p>{{ problema_original }}</p>
+            <input type="hidden" name="problema_original_text" value="{{ sProblema }}">
+            <input type="hidden" name="objetivo_selecionado" value="{{ sTipoDeObjetivo }}">
+            <input type="hidden" name="numero_total_variaveis" value="{{ nNumeroDeVariaveis }}">
+            <input type="hidden" name="numero_total_restricoes" value="{{ nNumeroDeRestricoes }}">
+            <input type="hidden" name="quantidade_dicas_usadas" value="{{ nNumeroDicasUtilizadas }}">
             
             <div class="equation-section">
                 <div class="math-expression-row">
@@ -162,10 +162,10 @@
                     \)
                 </div>
             </div>
+            <button type="submit">Finalizar</button>
         </form>
     </div>
 
-    <button type="submit">Verificar Resposta</button>
     <a href="{% url 'index' %}">Voltar para o Início</a>
 
     <script>

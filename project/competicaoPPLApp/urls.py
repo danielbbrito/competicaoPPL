@@ -6,5 +6,6 @@ urlpatterns = [
     path('parte1/', views.parte1, name='parte1'),
     path('parte2/', views.parte2, name='parte2'),
     path('parte3/', views.parte3, name='parte3'),
+    path('submit_final/', views.submit_final, name='submit_final')
 ]
 

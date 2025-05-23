@@ -52,7 +52,21 @@
     <div class="container">
         <h1>Bem-vindo à Competição da Etapa de Formulação no Processo de Modelagem em Programação Linear!</h1>
         <p>Estamos felizes em ter você aqui. Prepare seus problemas e vamos otimizar!</p>
-        <a href="{% url 'parte1' %}" class="btn">Participar Agora</a>
+
+        <form method="POST" action="{% url 'index' %}" style="margin-top: 1.5em;">
+            {% csrf_token %}
+            <div>
+                <label for="sNomeUsuario" style="display: block; margin-bottom: 0.5em; font-size: 1.1em;">Digite seu nome para começar:</label>
+                <input type="text" id="sNomeUsuario" name="sNomeUsuario" placeholder="Seu nome completo" required 
+                       style="padding: 0.7em; font-size: 1em; border: 1px solid #ccc; border-radius: 4px; width: 80%; max-width: 300px; margin-bottom: 1em;">
+            </div>
+
+            {% if sMensagemErro %}
+                <p style="color: red; margin-bottom: 1em;">{{ sMensagemErro }}</p>
+            {% endif %}
+
+            <button type="submit" class="btn">Iniciar Desafio</button>
+        </form>
     </div>
 </body>
 </html> 

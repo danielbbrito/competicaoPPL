@@ -73,12 +73,34 @@ WSGI_APPLICATION = 'competicaoPPL.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+# Session configuration for in-memory sessions
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default" # Use the 'default' cache defined below
+
+# Cache configuration for in-memory storage
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake", # Optional, but good practice for LocMemCache
     }
 }
+
+# Email Configuration (Example for Gmail, replace with your actual provider and credentials)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Example: 'smtp.gmail.com' or your provider's SMTP server
+EMAIL_PORT = 587                 # Common port for TLS
+EMAIL_USE_TLS = True             # Use TLS (True/False)
+# EMAIL_USE_SSL = False            # Use SSL if your provider uses it (often with port 465)
+EMAIL_HOST_USER = 'your-email@example.com'  # Your full email address (e.g., your Gmail)
+EMAIL_HOST_PASSWORD = 'your-password-or-app-password' # Your email password or app-specific password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER # Or another default sender address
 
 
 # Password validation
