@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
 from pylatex import Document, Section, Math
 from pylatex.math import Alignat
-from pylatex.utils import NoEscape
+from pylatex.utils import NoEscape, escape_latex
 from django.core.mail import EmailMessage
 from django.contrib import messages
+from django.conf import settings
 import os
 import tempfile
 import uuid
@@ -102,9 +103,11 @@ def parte3(request):
     
 
 def submit_final(request):
+    print("--- submit_final called ---")
     sNomeUsuario = request.session.get("sNomeUsuario", "Participante Anônimo") # Default se não estiver na sessão
 
     if request.method == "POST":
+        print(f"--- User: {sNomeUsuario} ---")
         sProblemaOriginalText = request.POST.get("problema_original_text", "")
         sObjetivoSelecionado = request.POST.get("objetivo_selecionado", "minimizar")
         
@@ -117,6 +120,16 @@ def submit_final(request):
             nTotalRestricoesInt = int(request.POST.get("numero_total_restricoes", "2"))
         except (ValueError, TypeError):
             nTotalRestricoesInt = 2
+        
+        try:
+            nNumeroDicasUtilizadas = int(request.POST.get("quantidade_dicas_usadas", "0"))
+        except (ValueError, TypeError):
+            nNumeroDicasUtilizadas = 0
+
+        print(f"--- Form Data Retrieved ---")
+        print(f"Problema Original: {sProblemaOriginalText[:50]}...") # Print first 50 chars
+        print(f"Objetivo: {sObjetivoSelecionado}")
+        print(f"Variáveis: {nTotalVariaveisInt}, Restrições: {nTotalRestricoesInt}")
 
         # Assegurar que os valores sejam pelo menos 1, se aplicável (ou como o formulário de origem os valida)
         nTotalVariaveisInt = max(1, nTotalVariaveisInt)
@@ -161,6 +174,7 @@ def submit_final(request):
             lListaValoresRhsRestricoes.append(request.POST.get(f"r{r_idx}_rhs", "0"))
 
         # Construir a string LaTeX para o modelo matemático
+        print("--- Constructing LaTeX string for the mathematical model ---")
         partes_latex = []
 
         # 1. Função Objetivo
@@ -203,11 +217,11 @@ def submit_final(request):
 
         elif nTotalVariaveisInt > 0: # Sem restrições principais, apenas não-negatividade
             sVariaveisNaoNegativas = ", ".join([f"x_{{{j + 1}}}" for j in range(nTotalVariaveisInt)])
-            # Para alinhar com o Z &= ..., esta também precisa de um &
-            # Poderíamos adicionar um "tal que" ou similar se quiséssemos texto aqui.
             partes_latex.append(f"& {sVariaveisNaoNegativas} \\geq 0")
         
         sModeloLatex = " \\\\ ".join(partes_latex)
+        print(f"--- LaTeX Model String ---")
+        print(sModeloLatex)
 
         geometry_options = {
             "tmargin": "2cm",
@@ -227,10 +241,35 @@ def submit_final(request):
         # Portanto, adicionamos \maketitle como o primeiro item no corpo do documento.
         doc.append(NoEscape(r'\maketitle'))
 
-        with doc.create(Section("O problema")):
-            doc.append(sProblemaOriginalText if sProblemaOriginalText else "Nenhuma descrição do problema fornecida.")
+        with doc.create(Section("O problema", numbering=False)):
+            if sProblemaOriginalText.strip():
+                # Normalize newlines first
+                problema_text_normalized = sProblemaOriginalText.replace("\r\n", "\n")
+                
+                paragraphs = problema_text_normalized.split('\n\n')
+                
+                for i, para_text in enumerate(paragraphs):
+                    escaped_para = escape_latex(para_text)
+                    # Handle both typed sequences like ">=" and pasted unicode characters like "≥"
+                    math_handled_para = escaped_para.replace(">=", "$\\geq$").replace("≥", "$\\geq$") \
+                                                  .replace("<=", "$\\leq$").replace("≤", "$\\leq$")
+                    
+                    lines_in_para = math_handled_para.split('\n')
+                    for k, line_text in enumerate(lines_in_para):
+                        doc.append(NoEscape(line_text))
+                        if k < len(lines_in_para) - 1:
+                            doc.append(NoEscape(r"\\ ")) 
+                    
+                    if i < len(paragraphs) - 1:
+                        doc.append(NoEscape(r"\par")) 
+            else:
+                 doc.append("Nenhuma descrição do problema fornecida.")
 
-        with doc.create(Section("O modelo")):
+        # Add section for number of hints used
+        with doc.create(Section("Informações da Competição", numbering=False)):
+            doc.append(f"Número de Dicas Utilizadas: {nNumeroDicasUtilizadas}")
+
+        with doc.create(Section("O modelo", numbering=False)):
             if sModeloLatex.strip():
                 try:
                     with doc.create(Alignat(numbering=False)) as agn:
@@ -248,8 +287,11 @@ def submit_final(request):
         sCaminhoArquivoPdfGerado = ""
 
         try:
-            doc.generate_pdf(sCaminhoCompletoTexNoExt, clean_tex=True, compiler='pdflatex')
+            print(f"--- Attempting to generate PDF at: {sCaminhoCompletoTexNoExt} ---")
+            # Temporarily set clean_tex=False to inspect log files on error
+            doc.generate_pdf(sCaminhoCompletoTexNoExt, clean_tex=False, compiler='pdflatex')
             sCaminhoArquivoPdfGerado = f"{sCaminhoCompletoTexNoExt}.pdf"
+            print(f"--- PDF generated successfully: {sCaminhoArquivoPdfGerado} ---")
             
             if not os.path.exists(sCaminhoArquivoPdfGerado):
                 if os.path.exists(f"{sNomeBaseArquivo}.pdf"):
@@ -260,14 +302,24 @@ def submit_final(request):
             with open(sCaminhoArquivoPdfGerado, "rb") as f_pdf:
                 pdf_bytes = f_pdf.read()
             
-            # Em vez de retornar o PDF como download, vamos enviá-lo por e-mail
-            sEmailProfessor = "professor@example.com"  # <<< COLOQUE O E-MAIL DO PROFESSOR AQUI
-            sEmailRemetente = "noreply@example.com" # <<< COLOQUE UM REMETENTE VÁLIDO OU CONFIGURE DEFAULT_FROM_EMAIL
+            # request.session["download_initiated_flag"] = True # No longer needed for email path
+
+            # Temporarily changed to download PDF instead of emailing - REVERTING THIS
+            # print("--- Preparing PDF for download ---")
+            # response = HttpResponse(pdf_bytes, content_type="application/pdf")
+            # response["Content-Disposition"] = f'attachment; filename="relatorio_ppl_{sNomeUsuario.replace(" ", "_")}.pdf"'
+            # print(f"--- Returning PDF download: relatorio_ppl_{sNomeUsuario.replace(' ', '_')}.pdf ---")
+            # return response
+
+            # Restore email sending logic
+            sEmailProfessor = "danieldebrito2105@gmail.com" 
+            sEmailRemetente = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@example.com")
 
             sAssuntoEmail = f"Relatório Competição PPL - {sNomeUsuario}"
             sCorpoEmail = f"Prezado Professor,\n\nEm anexo, segue o relatório da competição de PPL submetido por {sNomeUsuario}.\n\nAtenciosamente,\nSistema da Competição PPL"
 
             try:
+                print(f"--- Attempting to send email to {sEmailProfessor} from {sEmailRemetente} ---")
                 email = EmailMessage(
                     sAssuntoEmail,
                     sCorpoEmail,
@@ -277,42 +329,72 @@ def submit_final(request):
                 email.attach(f'relatorio_ppl_{sNomeUsuario.replace(" ", "_")}.pdf', pdf_bytes, 'application/pdf')
                 email.send()
                 messages.success(request, "Seu relatório foi submetido e enviado por e-mail com sucesso!")
+                print("--- Email sent successfully! ---")
+                # REDIRECT TO THANK YOU PAGE IF EMAIL IS SUCCESSFUL
+                request.session["download_initiated_flag"] = False # Ensure flag is not set for email path
+                return redirect("thank_you_page") 
             except Exception as e_email:
                 print(f"Erro ao enviar o e-mail: {e_email}")
                 messages.error(request, f"Houve um erro ao tentar enviar o e-mail com o relatório: {e_email}. Por favor, entre em contato com o administrador.")
-                # Opcional: Poderia retornar o PDF para download como fallback se o e-mail falhar
-                # response = HttpResponse(pdf_bytes, content_type="application/pdf")
-                # response["Content-Disposition"] = f'attachment; filename="relatorio_ppl_{sNomeUsuario.replace(" ", "_")}.pdf"'
-                # return response
+                # Fallback or error handling, could redirect to an error page or back to form with message
+                # If email fails, we could offer download as fallback, or redirect to index with error.
+                # For now, just redirecting to index with an error message seems reasonable after an email failure.
+                return redirect("index") 
 
-            return redirect("index") # Redirecionar para a página inicial (ou outra de sucesso)
+            # If emailing was active and successful, we would have redirected.
+            # Since we are downloading directly, the return response for download is the end of this request.
+            # The redirect("index") below was for the case where email was the main path.
+            # return redirect("index") # Original redirect when email was the main path, now handled above
 
         except Exception as e:
             print(f"Erro ao gerar o PDF: {e}")
             sMensagemErro = f"Ocorreu um erro ao gerar o PDF: {e}. "
             sMensagemErro += "Verifique se o LaTeX está instalado e configurado corretamente no servidor. "
+            sMensagemErro += f"Os arquivos temporários do LaTeX foram preservados em: {sDiretorioTemporario} (procure por '{sNomeBaseArquivo}.log'). "
             sMensagemErro += f"Conteúdo LaTeX que tentou ser compilado (para depuração do admin): <pre>{sModeloLatex}</pre>"
             return HttpResponse(sMensagemErro, status=500)
         
         finally:
-            # Limpeza dos arquivos temporários
-            arquivos_para_limpar = [sCaminhoArquivoPdfGerado]
-            for ext in ['.tex', '.aux', '.log']:
-                arquivos_para_limpar.append(f"{sCaminhoCompletoTexNoExt}{ext}")
-                # Caso o arquivo tenha sido gerado no CWD por algum motivo
-                arquivos_para_limpar.append(f"{sNomeBaseArquivo}{ext}")
+            # Limpeza dos arquivos temporários - only clean up if PDF was successful and emailed/downloaded
+            # If there was an exception during PDF generation, files are kept due to clean_tex=False above
+            # and this finally block might not have sCaminhoArquivoPdfGerado properly set if pdf generation failed early.
+            
+            # We should only clean if sCaminhoArquivoPdfGerado is not empty (meaning PDF generation likely succeeded)
+            if sCaminhoArquivoPdfGerado and os.path.exists(sCaminhoArquivoPdfGerado):
+                print("--- Cleaning up temporary files after successful PDF handling ---")
+                arquivos_para_limpar = [sCaminhoArquivoPdfGerado]
+                for ext in ['.tex', '.aux', '.log']:
+                    arquivos_para_limpar.append(f"{sCaminhoCompletoTexNoExt}{ext}")
+                    arquivos_para_limpar.append(f"{sNomeBaseArquivo}{ext}") # In case CWD was used
 
-
-            for arquivo in arquivos_para_limpar:
-                if arquivo and os.path.exists(arquivo):
-                    try:
-                        os.remove(arquivo)
-                    except OSError as ex_remove:
-                        print(f"Erro ao limpar o arquivo temporário {arquivo}: {ex_remove}")
+                for arquivo in arquivos_para_limpar:
+                    if arquivo and os.path.exists(arquivo):
+                        try:
+                            os.remove(arquivo)
+                            print(f"Successfully removed {arquivo}")
+                        except OSError as ex_remove:
+                            print(f"Erro ao limpar o arquivo temporário {arquivo}: {ex_remove}")
+            else:
+                print("--- PDF generation or handling failed, temporary files might have been preserved for inspection ---")
     
     else: # GET or other methods
         # Se o nome não estiver na sessão e for um GET, também redirecionar para o index.
+        print("--- submit_final called with non-POST method or missing session name ---")
         if not request.session.get("sNomeUsuario"):
             return redirect("index")
         return HttpResponseForbidden("Método não permitido. Por favor, submeta o formulário a partir da Parte 3.")
+    
+
+def thank_you_view(request):
+    """Displays a thank you page after submission."""
+    print("--- thank_you_view called ---")
+    sNomeUsuario = request.session.get("sNomeUsuario", "Participante")
+    # We can pass a context variable if we want to indicate that a download was part of the process
+    # For example, set a session variable in submit_final before redirecting, then check it here.
+    # For now, we'll keep it simple.
+    context = {
+        "sNomeUsuario": sNomeUsuario,
+        "download_initiated": request.session.pop("download_initiated_flag", False) # Check and clear a flag
+    }
+    return render(request, "competicaoPPLApp/thank_you.html", context)
     

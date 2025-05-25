@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Competição PPL{% endblock %}</title>
+    <!-- Add links to global CSS files here -->
+    <!-- Example: <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 0;
+            margin: 0;
+            background-color: #f8f9fa;
+            color: #212529;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .navbar {
+            background-color: #0056b3;
+            padding: 1rem;
+            color: white;
+            text-align: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .container-main {
+            flex: 1;
+            padding: 20px;
+            width: 100%;
+            max-width: 1200px; /* Adjust as needed */
+            margin: 0 auto; /* Centers content */
+            box-sizing: border-box;
+        }
+        footer {
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+            font-size: 0.9em;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <a href="{% url 'index' %}">Competição PPL</a>
+    </nav>
+
+    <main class="container-main">
+        {% block content %}
+        <!-- Content from child templates will go here -->
+        {% endblock %}
+    </main>
+
+    <footer>
+        <!-- Copyright removed as requested -->
+    </footer>
+
+    <!-- Add links to global JS files here -->
+    <!-- Example: <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script> -->
+    <!-- SweetAlert should be included in base if used on many pages, or individually if not -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> -->
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html> 

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Competição PPL - Parte 3</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         body {
@@ -133,21 +134,21 @@
                         <span style="display: inline-block; width: 90px; /* Adjust width to match approx 'Sujeito a:' */"></span>
                     {% endif %}
                     {% for i in rangeVariaveis %}
-                        <input type="number" class="math-input" id="a{{ j }}{{ i }}" name="a{{ j }}{{ i }}" value="1">
+                        <input type="number" class="math-input" id="a{{ j }}{{ i }}" name="r{{j}}_c{{i}}" value="1">
                         \( x_{{ i }} \)
                         {% if not forloop.last %}
-                            <select class="operator-select" id="op_rst_{{ j }}_{{ i }}" name="op_rst_{{ j }}_{{ i }}">
+                            <select class="operator-select" id="op_rst_{{ j }}_{{ i }}" name="r{{j}}_op_var_{{i}}">
                                 <option value="+">+</option>
                                 <option value="-">-</option>
                             </select>
                         {% endif %}
                     {% endfor %}
-                    <select class="operator-select math-inequality" id="ineq{{ j }}" name="ineq{{ j }}">
-                        <option value="\le">\( \le \)</option>
-                        <option value="\ge">\( \ge \)</option>
+                    <select class="operator-select math-inequality" id="ineq{{ j }}" name="r{{j}}_rel_op">
+                        <option value="<=">\( \le \)</option>
+                        <option value=">=">\( \ge \)</option>
                         <option value="=">\( = \)</option>
                     </select>
-                    <input type="number" class="math-input" id="b{{ j }}" name="b{{ j }}" value="1">
+                    <input type="number" class="math-input" id="b{{ j }}" name="r{{j}}_rhs" value="1">
                 </div>
                 {% endfor %}
             </div>
@@ -171,67 +172,99 @@
     <script>
         window.MathJax = {
           tex: {
-            inlineMath: [['\\(', '\\)'], ['$', '$']], // Define $...$ and \(...\) as inline math
-            displayMath: [['\\[', '\\]'], ['$$', '$$']], // Define $$...$$ and \[...\] as display math
+            inlineMath: [['\\(', '\\)'], ['$', '$']],
+            displayMath: [['\\[', '\\]'], ['$$', '$$']],
             processEscapes: true
           },
           startup: {
             ready: () => {
               MathJax.startup.defaultReady();
-              // You could add a MathJax.typeset() call here if needed after dynamic content loading
-              // but with Django templates, it should render on initial load.
             }
           }
         };
 
-        window.onload = function() {
-            console.log("Página carregada. MathJax should process a Carga da página e estrutura dinâmica gerada.");
-            // MathJax.typeset(); 
-        };
+        // Function to check if all math inputs are filled (basic check for non-empty)
+        function checkAllMathInputsFilled() {
+            const inputs = document.querySelectorAll('#pplForm .math-input');
+            for (let input of inputs) {
+                if (input.value.trim() === "") {
+                    return false; // Found an empty input
+                }
+            }
+            return true; // All inputs are filled
+        }
 
+        const pplForm = document.getElementById('pplForm');
+        if (pplForm) {
+            pplForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Stop form submission initially
+
+                if (!checkAllMathInputsFilled()) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Campos Incompletos',
+                        text: 'Por favor, preencha todos os campos do modelo matemático antes de finalizar.',
+                        confirmButtonText: 'Entendi'
+                    });
+                    return; // Stop if validation fails
+                }
+
+                Swal.fire({
+                    title: 'Confirmar Finalização',
+                    text: "Você tem certeza que deseja finalizar e submeter o seu modelo? Esta é a última etapa.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, finalizar!',
+                    cancelButtonText: 'Revisar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Call your existing data collection function if needed for one last check or logging
+                        if (typeof verificarResposta === 'function') {
+                            verificarResposta(); 
+                        }
+                        pplForm.submit(); // Submit the form if confirmed
+                    }
+                });
+            });
+        }
+
+        // Existing verificarResposta function (can be kept as is or enhanced)
         function verificarResposta() {
             const oDadosDoFormulario = {};
             oDadosDoFormulario.sTipoDeObjetivo = "{{ sTipoDeObjetivo }}";
             
             oDadosDoFormulario.coeficientesObjetivo = [];
             oDadosDoFormulario.operadoresObjetivo = [];
-            document.querySelectorAll('#pplForm .equation-section:nth-child(1) .math-input[id^="c"]').forEach(input => {
+            // Corrected selectors to be more robust by looking within the form
+            pplForm.querySelectorAll('.equation-section:nth-of-type(1) .math-input[name^="c"]').forEach(input => {
                 oDadosDoFormulario.coeficientesObjetivo.push(input.value || "0");
             });
-            document.querySelectorAll('#pplForm .equation-section:nth-child(1) .operator-select[id^="op_obj_"]').forEach(select => {
+            pplForm.querySelectorAll('.equation-section:nth-of-type(1) .operator-select[name^="op_obj_"]').forEach(select => {
                 oDadosDoFormulario.operadoresObjetivo.push(select.value);
             });
 
             oDadosDoFormulario.restricoes = [];
-            const nNumeroDeRestricoes = parseInt("{{ nNumeroDeRestricoes }}");
+            const nNumeroDeRestricoes = parseInt("{{ nNumeroDeRestricoes }}" || "0");
             for (let j = 1; j <= nNumeroDeRestricoes; j++) {
                 const oRestricao = { coeficientes: [], operadores: [], inequacao: '', termoDireito: '' };
-                document.querySelectorAll(`#restricao_${j} .math-input[id^="a${j}"]`).forEach(input => {
+                // Corrected selectors to be more robust and use name attributes for POST data mapping
+                pplForm.querySelectorAll(`#restricao_${j} .math-input[name^="r${j}_c"]`).forEach(input => { // Example: name="r1_c1"
                     oRestricao.coeficientes.push(input.value || "0");
                 });
-                document.querySelectorAll(`#restricao_${j} .operator-select[id^="op_rst_${j}_"]`).forEach(select => {
+                pplForm.querySelectorAll(`#restricao_${j} .operator-select[name^="r${j}_op_var"]`).forEach(select => { // Example: name="r1_op_var1"
                     oRestricao.operadores.push(select.value);
                 });
-                const elIneq = document.getElementById(`ineq${j}`);
+                const elIneq = pplForm.querySelector(`#restricao_${j} .operator-select[name^="r${j}_rel_op"]`); // Example: name="r1_rel_op"
                 if(elIneq) oRestricao.inequacao = elIneq.value;
-                const elB = document.getElementById(`b${j}`);
+                const elB = pplForm.querySelector(`#restricao_${j} .math-input[name^="r${j}_rhs"]`); // Example: name="r1_rhs"
                 if(elB) oRestricao.termoDireito = elB.value || "0";
                 oDadosDoFormulario.restricoes.push(oRestricao);
             }
             
-            console.log("Dados coletados (antes da submissão):", JSON.stringify(oDadosDoFormulario, null, 2));
-            // alert("Verificação da resposta (veja console para dados). Ainda não implementada a lógica de validação.");
+            console.log("Dados coletados (antes da submissão via SweetAlert):", JSON.stringify(oDadosDoFormulario, null, 2));
         }
-
-        // Optional: Add an event listener to the form for client-side validation if needed
-        // document.getElementById('pplForm').addEventListener('submit', function(event) {
-        //     // Call a validation function. If it returns false, prevent submission:
-        //     // if (!validateFormClientSide()) {
-        //     //     event.preventDefault();
-        //     // }
-        //     // You can also call verificarResposta() here if you want to log data before submission
-        //     verificarResposta(); 
-        // });
     </script>
 </body>
 </html> 

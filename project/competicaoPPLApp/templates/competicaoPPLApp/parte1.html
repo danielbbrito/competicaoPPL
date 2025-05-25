@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Competição PPL - Parte 1</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -140,10 +141,10 @@
 <body>
     <h1>Parte 1</h1>
     <!-- Wrap the question in a div for better control -->
-     <h2>Digite seu problema de programação linear. Preste atenção no que está digitando.</h2>
+     <h2>Digite seu problema de programação linear. Por favor indicar de onde voce obteve este problema.</h2>
     <div class="fill-gap-question">
         
-        <form action="{% url 'parte2' %}" method="post">
+        <form action="{% url 'parte2' %}" method="post" id="parte1Form">
             {% csrf_token %}
             <textarea id="problema" name="problema" placeholder="Digite seu problema de programação linear aqui..."></textarea>
             <button type="submit">Continuar</button>
@@ -153,6 +154,40 @@
       
     <a href="{% url 'index' %}">Voltar para o Início</a>
     
-    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const form = document.getElementById("parte1Form");
+            if (form) {
+                form.addEventListener("submit", function(event) {
+                    event.preventDefault(); // Impede o envio imediato do formulário
+                    const problemaTextarea = document.getElementById("problema");
+                    if (!problemaTextarea || !problemaTextarea.value.trim()) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Campo Obrigatório',
+                            text: 'Por favor, descreva o seu problema de programação linear para continuar.',
+                            confirmButtonText: 'Entendi'
+                        });
+                        return; 
+                    }
+
+                    Swal.fire({
+                        title: 'Confirmar Continuação',
+                        text: "Você tem certeza que deseja continuar para a próxima etapa?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sim, continuar!',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit(); // Envia o formulário se o usuário confirmar
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html> 

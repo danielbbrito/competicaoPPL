@@ -1,0 +1,20 @@
+{% extends "competicaoPPLApp/base.html" %}
+
+{% block title %}Obrigado! - Competição PPL{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-body text-center">
+            <h1 class="card-title">Obrigado, {{ sNomeUsuario|default:"Participante" }}!</h1>
+            <p class="card-text">Seu problema foi enviado com sucesso.</p>
+            {% if download_initiated %}
+            <p class="card-text mt-3">O download do seu relatório PDF deve ter começado automaticamente.</p>
+            <p class="card-text">Se o download não iniciou, verifique as configurações do seu navegador ou possíveis bloqueadores de pop-up.</p>
+            {% endif %}
+            <hr class="my-4">
+            <a href="{% url 'index' %}" class="btn btn-primary">Voltar à Página Inicial</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

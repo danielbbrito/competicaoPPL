@@ -98,8 +98,8 @@ EMAIL_HOST = 'smtp.gmail.com'  # Example: 'smtp.gmail.com' or your provider's SM
 EMAIL_PORT = 587                 # Common port for TLS
 EMAIL_USE_TLS = True             # Use TLS (True/False)
 # EMAIL_USE_SSL = False            # Use SSL if your provider uses it (often with port 465)
-EMAIL_HOST_USER = 'your-email@example.com'  # Your full email address (e.g., your Gmail)
-EMAIL_HOST_PASSWORD = 'your-password-or-app-password' # Your email password or app-specific password
+EMAIL_HOST_USER = 'competicaoppl@gmail.com'  # Your full email address (e.g., your Gmail)
+EMAIL_HOST_PASSWORD = 'cixy mhnv dyte gotd' # Your email password or app-specific password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER # Or another default sender address
 
 

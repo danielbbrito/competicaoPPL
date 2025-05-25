@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Competição PPL - Parte 1</title>
-    <!-- SweetAlert2 CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.16.1/sweetalert2.min.css">
+    <title>Competição PPL - Parte 2</title>
+    <!-- SweetAlert2 JS and CSS from jsdelivr for consistency -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -148,7 +148,7 @@
      <h2>Complete as lacunas abaixo de acordo com o seu problema de programação linear digitado na parte 1. 
         Caso haja alguma dúvida quanto ao preenchimento você poderá consultar o sistema Dicas. Mais dicas, menor nota na competição.</h2>
     <div class="fill-gap-question">
-        <form action="{% url 'parte3' %}" method="post">
+        <form action="{% url 'parte3' %}" method="post" id="parte2Form">
             {% csrf_token %}
             A empresa nos contratou para
             <span class="input-wrapper">
@@ -178,10 +178,9 @@
       
     <a href="{% url 'index' %}">Voltar para o Início</a>
     
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.16.1/sweetalert2.all.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('parte2Form');
             const tooltipIcons = document.querySelectorAll('.tooltip-icon');
             const objetivoInput = document.getElementById('objetivo');
             const variaveisInput = document.getElementById('variaveis');
@@ -190,8 +189,8 @@
 
             function checkInputsAndToggleButton() {
                 const objetivoValido = objetivoInput.value !== "";
-                const variaveisValido = variaveisInput.value !== "";
-                const restricoesValido = restricoesInput.value !== "";
+                const variaveisValido = variaveisInput.value.trim() !== "" && !isNaN(parseInt(variaveisInput.value)) && parseInt(variaveisInput.value) > 0;
+                const restricoesValido = restricoesInput.value.trim() !== "" && !isNaN(parseInt(restricoesInput.value)) && parseInt(restricoesInput.value) >= 0; // Restrições pode ser 0
 
                 if (objetivoValido && variaveisValido && restricoesValido) {
                     continuarBtn.disabled = false;
@@ -200,13 +199,12 @@
                 }
             }
 
-            // Initial check and disable button
             checkInputsAndToggleButton(); 
 
             tooltipIcons.forEach(icon => {
                 icon.addEventListener('click', function () {
                     const clue = this.getAttribute('title');
-                    const id = this.getAttribute("id");
+                    // const id = this.getAttribute("id"); // id variable was declared but not used
                     var nQuantidadeDicas = document.getElementById("dicas").value;
                     nQuantidadeDicas = parseInt(nQuantidadeDicas) + 1;
                     document.getElementById("dicas").value = nQuantidadeDicas;
@@ -221,11 +219,41 @@
                 });
             });
 
-            // Add event listeners to inputs
             [objetivoInput, variaveisInput, restricoesInput].forEach(input => {
                 input.addEventListener('input', checkInputsAndToggleButton);
-                input.addEventListener('change', checkInputsAndToggleButton); // For select and in case input event doesn't cover all changes
+                input.addEventListener('change', checkInputsAndToggleButton); 
             });
+
+            if (form) {
+                form.addEventListener("submit", function(event) {
+                    if (continuarBtn.disabled) { // Check if button is disabled by validation
+                        event.preventDefault(); // Stop submission if form not valid
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Campos Incompletos ou Inválidos',
+                            text: 'Por favor, preencha todos os campos corretamente para continuar. Número de variáveis deve ser ao menos 1, e restrições 0 ou mais.',
+                            confirmButtonText: 'Entendi'
+                        });
+                        return;
+                    }
+                    
+                    event.preventDefault(); // Always prevent default initially for confirmation
+                    Swal.fire({
+                        title: 'Confirmar Continuação',
+                        text: "Você tem certeza que deseja prosseguir para a próxima etapa com os dados fornecidos?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sim, continuar!',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit(); 
+                        }
+                    });
+                });
+            }
         });
     </script>
 </body>

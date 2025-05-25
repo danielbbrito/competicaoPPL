@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Competição PPL</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -53,7 +54,7 @@
         <h1>Bem-vindo à Competição da Etapa de Formulação no Processo de Modelagem em Programação Linear!</h1>
         <p>Estamos felizes em ter você aqui. Prepare seus problemas e vamos otimizar!</p>
 
-        <form method="POST" action="{% url 'index' %}" style="margin-top: 1.5em;">
+        <form method="POST" action="{% url 'index' %}" style="margin-top: 1.5em;" id="indexForm">
             {% csrf_token %}
             <div>
                 <label for="sNomeUsuario" style="display: block; margin-bottom: 0.5em; font-size: 1.1em;">Digite seu nome para começar:</label>
@@ -68,5 +69,41 @@
             <button type="submit" class="btn">Iniciar Desafio</button>
         </form>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const form = document.getElementById("indexForm");
+            if (form) {
+                form.addEventListener("submit", function(event) {
+                    event.preventDefault(); // Impede o envio imediato do formulário
+                    const nomeUsuarioInput = document.getElementById("sNomeUsuario");
+                    if (!nomeUsuarioInput || !nomeUsuarioInput.value.trim()) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'Por favor, insira seu nome para continuar.',
+                            confirmButtonText: 'Entendi'
+                        });
+                        return; // Não prossegue para a confirmação de continuação
+                    }
+
+                    Swal.fire({
+                        title: 'Confirmar Início',
+                        text: "Você tem certeza que deseja iniciar o desafio?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sim, iniciar!',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit(); // Envia o formulário se o usuário confirmar
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html> 
