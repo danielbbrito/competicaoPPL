@@ -111,20 +111,14 @@
             <div class="equation-section">
                 <div class="math-expression-row">
                     \( {{ sTipoDeObjetivo|capfirst }} \quad  \)
-                    <select class="operator-select" name="obj_c1_sign" id="obj_c1_sign">
-                        <option value="+">+</option>
-                        <option value="-">-</option>
-                    </select>
-                    <input type="number" step="any" class="math-input" id="c1" name="c1" value="1">
-                    \( x_{1} \)
                     {% for i_loop_idx in rangeVariaveis %} {# rangeVariaveis is 1, ..., N #}
-                        {% if i_loop_idx > 1 %} {# For c2x2, c3x3, ... #}
-                            <select class="operator-select" id="op_obj_{{ i_loop_idx|add:"-1" }}" name="op_obj_{{ i_loop_idx|add:"-1" }}">
+                        <input type="number" step="any" class="math-input" id="c{{ i_loop_idx }}" name="c{{ i_loop_idx }}" value="1">
+                        \( x_{{ i_loop_idx }} \)
+                        {% if not forloop.last %}
+                            <select class="operator-select" id="op_obj_{{ i_loop_idx }}" name="op_obj_{{ i_loop_idx }}">
                                 <option value="+">+</option>
                                 <option value="-">-</option>
                             </select>
-                            <input type="number" step="any" class="math-input" id="c{{ i_loop_idx }}" name="c{{ i_loop_idx }}" value="1">
-                            \( x_{{ i_loop_idx }} \)
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -137,23 +131,16 @@
                     {% if forloop.first %}
                         <span style="margin-right: 5px;">\( \text{Sujeito a:} \)</span>
                     {% else %}
-                        <span style="display: inline-block; width: 90px; /* Adjust width to match approx 'Sujeito a:' */"></span>
+                        <span style="display: inline-block; width: 90px;"></span>
                     {% endif %}
-                    <select class="operator-select" name="r{{j_val}}_c1_sign" id="r{{j_val}}_c1_sign">
-                        <option value="+">+</option>
-                        <option value="-">-</option>
-                    </select>
-                    <input type="number" step="any" class="math-input" id="r{{j_val}}_c1" name="r{{j_val}}_c1" value="1">
-                    \( x_{1} \)
-
                     {% for i_val in rangeVariaveis %} {# i_val = 1, ..., N #}
-                        {% if i_val > 1 %} {# For terms r_j_c2*x_2, r_j_c3*x_3, ... #}
-                            <select class="operator-select" id="r{{j_val}}_op_var_{{i_val|add:"-1"}}" name="r{{j_val}}_op_var_{{i_val|add:"-1"}}">
+                        <input type="number" step="any" class="math-input" id="r{{j_val}}_c{{i_val}}" name="r{{j_val}}_c{{i_val}}" value="1">
+                        \( x_{{i_val}} \)
+                        {% if not forloop.last %}
+                            <select class="operator-select" id="r{{j_val}}_op_var_{{i_val}}" name="r{{j_val}}_op_var_{{i_val}}">
                                 <option value="+">+</option>
                                 <option value="-">-</option>
                             </select>
-                            <input type="number" step="any" class="math-input" id="r{{j_val}}_c{{i_val}}" name="r{{j_val}}_c{{i_val}}" value="1">
-                            \( x_{{i_val}} \)
                         {% endif %}
                     {% endfor %}
                     <select class="operator-select math-inequality" id="ineq{{ j_val }}" name="r{{j_val}}_rel_op">

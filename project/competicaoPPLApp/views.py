@@ -135,22 +135,31 @@ def submit_final(request):
         nTotalVariaveisInt = max(1, nTotalVariaveisInt)
         nTotalRestricoesInt = max(0, nTotalRestricoesInt) # Pode haver 0 restrições
 
-        # Sinal do primeiro Coeficiente da Função Objetivo
-        sObjC1Sign = request.POST.get("obj_c1_sign", "+")
+        # Helper function to format coefficient values for LaTeX display
+        def get_display_val_for_latex(value_str_or_float):
+            try:
+                f_val = float(value_str_or_float)
+            except ValueError:
+                # Fallback for invalid float string, though form validation should prevent this.
+                # Depending on desired behavior, could return "0" or raise error.
+                # For LaTeX, returning original string or "0" might be safest.
+                return str(value_str_or_float) if isinstance(value_str_or_float, str) else "0"
+            
+            if f_val == int(f_val):
+                return str(int(f_val))
+            else:
+                # Basic float to string. Consider rounding e.g. "{:.2f}".format(f_val) if needed.
+                return str(f_val)
 
         # Coeficientes da Função Objetivo (c1, c2, ...)
         lCoeficientesObjetivo = []
-        if nTotalVariaveisInt > 0:
-            # Primeiro coeficiente com nome específico
-            lCoeficientesObjetivo.append(request.POST.get("c1", "0")) 
-            # Coeficientes restantes
-            for i in range(2, nTotalVariaveisInt + 1):
-                lCoeficientesObjetivo.append(request.POST.get(f"c{i}", "0"))
+        for i in range(1, nTotalVariaveisInt + 1):
+            lCoeficientesObjetivo.append(request.POST.get(f"c{i}", "0"))
         
         # Operadores entre termos da Função Objetivo (op_obj_1, op_obj_2, ...)
-        # Haverá N-1 operadores para N variáveis. O primeiro operador é entre c1x1 e c2x2.
+        # Haverá N-1 operadores para N variáveis.
         lOperadoresObjetivo = []
-        for i in range(1, nTotalVariaveisInt): # op_obj_1, op_obj_2, ..., op_obj_{N-1}
+        for i in range(1, nTotalVariaveisInt): # op_obj_1 up to op_obj_{N-1}
             lOperadoresObjetivo.append(request.POST.get(f"op_obj_{i}", "+"))
         
         # Dados das Restrições
@@ -158,100 +167,110 @@ def submit_final(request):
         llListaOperadoresVarRestricoes = [] 
         lListaOperadoresRelacionaisRestricoesLatex = [] 
         lListaValoresRhsRestricoes = [] 
-        lListaSinaisPrimeiroCoefRestricao = []
 
-        for r_idx in range(1, nTotalRestricoesInt + 1):
-            sR_C1Sign = request.POST.get(f"r{r_idx}_c1_sign", "+")
-            lListaSinaisPrimeiroCoefRestricao.append(sR_C1Sign)
-
-            lCoefsEstaRestricao = []
-            if nTotalVariaveisInt > 0:
-                # Primeiro coeficiente da restrição
-                lCoefsEstaRestricao.append(request.POST.get(f"r{r_idx}_c1", "0"))
-                # Coeficientes restantes da restrição
-                for v_idx in range(2, nTotalVariaveisInt + 1):
-                    lCoefsEstaRestricao.append(request.POST.get(f"r{r_idx}_c{v_idx}", "0"))
-            llListaCoeficientesRestricoes.append(lCoefsEstaRestricao)
-
-            # Operadores entre variáveis para a restrição r_idx (r{r_idx}_op_var{op_v_idx})
-            # Haverá N-1 operadores para N termos. O primeiro é entre r_c1x1 e r_c2x2
-            lOpsVarEstaRestricao = []
-            for op_v_idx in range(1, nTotalVariaveisInt): 
-                lOpsVarEstaRestricao.append(request.POST.get(f"r{r_idx}_op_var_{op_v_idx}", "+"))
-            llListaOperadoresVarRestricoes.append(lOpsVarEstaRestricao)
-            
-            sOpRelRestricao = request.POST.get(f"r{r_idx}_rel_op", "<=")
-            sOpRelRestricaoLatex = sOpRelRestricao.replace("<=", "\\leq").replace(">=", "\\geq").replace("=", "=")
-            # Fallback if not a known operator - though form should limit choices
-            if sOpRelRestricaoLatex not in ["\\leq", "\\geq", "="]:
+        for r_idx_form in range(1, nTotalRestricoesInt + 1): # r_idx_form matches form names like r1_c1
+            sOpRelRestricao = request.POST.get(f"r{r_idx_form}_rel_op", "<=")
+            # Corrected escaping for \leq and \geq to be single backslash in the final string
+            # Using if/elif for clarity and to ensure correct assignment
+            if sOpRelRestricao == "<=":
                 sOpRelRestricaoLatex = "\\leq"
+            elif sOpRelRestricao == ">=":
+                sOpRelRestricaoLatex = "\\geq"
+            elif sOpRelRestricao == "=":
+                sOpRelRestricaoLatex = "="
+            else:
+                sOpRelRestricaoLatex = "\\leq" # Fallback for any unexpected value
             lListaOperadoresRelacionaisRestricoesLatex.append(sOpRelRestricaoLatex)
 
-            lListaValoresRhsRestricoes.append(request.POST.get(f"r{r_idx}_rhs", "0"))
+            lListaValoresRhsRestricoes.append(request.POST.get(f"r{r_idx_form}_rhs", "0"))
+
+            lCoefsEstaRestricao = []
+            for v_idx_form in range(1, nTotalVariaveisInt + 1):
+                lCoefsEstaRestricao.append(request.POST.get(f"r{r_idx_form}_c{v_idx_form}", "0"))
+            llListaCoeficientesRestricoes.append(lCoefsEstaRestricao)
+
+            lOpsVarEstaRestricao = []
+            for op_v_idx_form in range(1, nTotalVariaveisInt): # N-1 operadores
+                lOpsVarEstaRestricao.append(request.POST.get(f"r{r_idx_form}_op_var_{op_v_idx_form}", "+"))
+            llListaOperadoresVarRestricoes.append(lOpsVarEstaRestricao)
 
         # Construir a string LaTeX para o modelo matemático
         print("--- Constructing LaTeX string for the mathematical model ---")
         partes_latex = []
 
         # 1. Função Objetivo
-        # User wants to remove Z = but keep alignment for the expression itself.
-        # "Minimizar" will be on the left, then an alignment point, then the expression.
-        obj_func_str = "\\text{" + sObjetivoSelecionado + "} & ~"
+        sObjetivoSelecionadoDisplay = sObjetivoSelecionado.capitalize()
+        obj_func_str = f"\\text{{{sObjetivoSelecionadoDisplay}}} & ~"
         if nTotalVariaveisInt > 0:
-            sPrimeiroTermoObj = f"{lCoeficientesObjetivo[0]}x_{{1}}"
-            if sObjC1Sign == "-":
-                obj_func_str += f"- {sPrimeiroTermoObj}"
-            else: # Inclui o caso de "+" ou qualquer outro valor (embora o form só envie + ou -)
-                obj_func_str += f"{sPrimeiroTermoObj}" 
+            # Primeiro termo (c1*x1) - User inputs sign directly
+            fC1_val_input = float(lCoeficientesObjetivo[0])
             
-            for i in range(1, nTotalVariaveisInt): # Começa do segundo termo (índice 1 do array de coeficientes)
-                obj_func_str += f" {lOperadoresObjetivo[i-1]} {lCoeficientesObjetivo[i]}x_{{{i + 1}}}"
+            if fC1_val_input < 0:
+                obj_func_str += f"- {get_display_val_for_latex(abs(fC1_val_input))}x_{{1}}"
+            else:
+                obj_func_str += f"{get_display_val_for_latex(fC1_val_input)}x_{{1}}"
+
+            # Termos subsequentes (c2*x2, c3*x3, ...)
+            for i in range(1, nTotalVariaveisInt): 
+                sSelectedOperator = lOperadoresObjetivo[i-1] # Operator from <select> ("+" or "-")
+                fCoefInputValue = float(lCoeficientesObjetivo[i])   # Value from <input> (can be pos or neg)
+
+                fEffectiveCoefValue = fCoefInputValue
+                if sSelectedOperator == "-":
+                    fEffectiveCoefValue *= -1 # Flip sign if operator is minus
+                
+                # Now, determine the LaTeX string based on the sign of fEffectiveCoefValue
+                if fEffectiveCoefValue < 0:
+                    obj_func_str += f" - {get_display_val_for_latex(abs(fEffectiveCoefValue))}x_{{{i + 1}}}"
+                else: # fEffectiveCoefValue >= 0
+                    obj_func_str += f" + {get_display_val_for_latex(fEffectiveCoefValue)}x_{{{i + 1}}}"
         partes_latex.append(obj_func_str)
 
-        # 2. Constraints (incluindo "sujeito a:") e Não-negatividade
+        # 2. Constraints
         if nTotalRestricoesInt > 0:
-            # Primeira restrição com "sujeito a:"
-            first_constraint_text_part = "\\text{sujeito a:} ~"
-            # Construir a parte da equação da primeira restrição
-            first_constraint_eq_part = ""
-            if nTotalVariaveisInt > 0:
-                sR0C1Sign = lListaSinaisPrimeiroCoefRestricao[0]
-                sPrimeiroTermoR0 = f"{llListaCoeficientesRestricoes[0][0]}x_{{1}}"
-                if sR0C1Sign == "-":
-                    first_constraint_eq_part += f"- {sPrimeiroTermoR0}"
-                else:
-                    first_constraint_eq_part += sPrimeiroTermoR0
-
-                for v_idx in range(1, nTotalVariaveisInt): # Começa do segundo termo
-                    first_constraint_eq_part += f" {llListaOperadoresVarRestricoes[0][v_idx-1]} {llListaCoeficientesRestricoes[0][v_idx]}x_{{{v_idx + 1}}}"
-            first_constraint_eq_part += f" {lListaOperadoresRelacionaisRestricoesLatex[0]} {lListaValoresRhsRestricoes[0]}"
-            partes_latex.append(f"{first_constraint_text_part} & {first_constraint_eq_part}")
-
-            # Restrições subsequentes
-            for r_idx in range(1, nTotalRestricoesInt):
-                constraint_str = "& " # Apenas o marcador de alinhamento e a equação
+            for r_loop_idx in range(nTotalRestricoesInt): # 0 to M-1
+                current_constraint_terms_str = ""
                 if nTotalVariaveisInt > 0:
-                    sR_C1Sign = lListaSinaisPrimeiroCoefRestricao[r_idx]
-                    sPrimeiroTermoR = f"{llListaCoeficientesRestricoes[r_idx][0]}x_{{1}}"
-                    if sR_C1Sign == "-":
-                        constraint_str += f"- {sPrimeiroTermoR}"
-                    else:
-                        constraint_str += sPrimeiroTermoR
+                    # Primeiro termo da restrição (r_c1*x1) - User inputs sign directly
+                    fR_C1_val_input = float(llListaCoeficientesRestricoes[r_loop_idx][0])
                     
-                    for v_idx in range(1, nTotalVariaveisInt): # Começa do segundo termo
-                        constraint_str += f" {llListaOperadoresVarRestricoes[r_idx][v_idx-1]} {llListaCoeficientesRestricoes[r_idx][v_idx]}x_{{{v_idx + 1}}}"
-                constraint_str += f" {lListaOperadoresRelacionaisRestricoesLatex[r_idx]} {lListaValoresRhsRestricoes[r_idx]}"
-                partes_latex.append(constraint_str)
+                    if fR_C1_val_input < 0:
+                        current_constraint_terms_str += f"- {get_display_val_for_latex(abs(fR_C1_val_input))}x_{{1}}"
+                    else:
+                        current_constraint_terms_str += f"{get_display_val_for_latex(fR_C1_val_input)}x_{{1}}"
+
+                    # Termos subsequentes da restrição
+                    for v_coef_idx in range(1, nTotalVariaveisInt): 
+                        sSelectedOperator = llListaOperadoresVarRestricoes[r_loop_idx][v_coef_idx-1]
+                        fCoefInputValue = float(llListaCoeficientesRestricoes[r_loop_idx][v_coef_idx])
+
+                        fEffectiveCoefValue = fCoefInputValue
+                        if sSelectedOperator == "-":
+                            fEffectiveCoefValue *= -1 # Flip sign if operator is minus
+                        
+                        if fEffectiveCoefValue < 0:
+                            current_constraint_terms_str += f" - {get_display_val_for_latex(abs(fEffectiveCoefValue))}x_{{{v_coef_idx + 1}}}"
+                        else: # fEffectiveCoefValue >= 0
+                            current_constraint_terms_str += f" + {get_display_val_for_latex(fEffectiveCoefValue)}x_{{{v_coef_idx + 1}}}"
+                
+                sFullConstraintLHS = current_constraint_terms_str.strip()
+                sRHS_val_display = get_display_val_for_latex(lListaValoresRhsRestricoes[r_loop_idx])
+                # sFullConstraintLine should only be the math part, e.g., "1x_1 + 1x_2 \leq 10"
+                sConstraintMathPart = f"{sFullConstraintLHS} {lListaOperadoresRelacionaisRestricoesLatex[r_loop_idx]} {sRHS_val_display}"
+
+                if r_loop_idx == 0: # Primeira restrição
+                    # For the first constraint, prepend "\text{Sujeito a:} ~ & "
+                    partes_latex.append(f"\\text{{Sujeito a:}} ~ & {sConstraintMathPart}")
+                else:
+                    # For subsequent constraints, only prepend "& " for alignment
+                    partes_latex.append(f"& {sConstraintMathPart}")
             
             # Restrições de não-negatividade (se houver restrições principais)
             if nTotalVariaveisInt > 0:
                 sVariaveisNaoNegativas = ", ".join([f"x_{{{j + 1}}}" for j in range(nTotalVariaveisInt)])
+                # Corrected escaping for \geq to be single backslash in the final string
                 partes_latex.append(f"& {sVariaveisNaoNegativas} \\geq 0")
 
-        elif nTotalVariaveisInt > 0: # Sem restrições principais, apenas não-negatividade
-            sVariaveisNaoNegativas = ", ".join([f"x_{{{j + 1}}}" for j in range(nTotalVariaveisInt)])
-            partes_latex.append(f"& {sVariaveisNaoNegativas} \\geq 0")
-        
         sModeloLatex = " \\\\ ".join(partes_latex)
         print(f"--- LaTeX Model String ---")
         print(sModeloLatex)
