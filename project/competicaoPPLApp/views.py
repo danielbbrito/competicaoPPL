@@ -135,32 +135,48 @@ def submit_final(request):
         nTotalVariaveisInt = max(1, nTotalVariaveisInt)
         nTotalRestricoesInt = max(0, nTotalRestricoesInt) # Pode haver 0 restrições
 
+        # Sinal do primeiro Coeficiente da Função Objetivo
+        sObjC1Sign = request.POST.get("obj_c1_sign", "+")
+
         # Coeficientes da Função Objetivo (c1, c2, ...)
         lCoeficientesObjetivo = []
-        for i in range(nTotalVariaveisInt):
-            lCoeficientesObjetivo.append(request.POST.get(f"c{i + 1}", "0"))
+        if nTotalVariaveisInt > 0:
+            # Primeiro coeficiente com nome específico
+            lCoeficientesObjetivo.append(request.POST.get("c1", "0")) 
+            # Coeficientes restantes
+            for i in range(2, nTotalVariaveisInt + 1):
+                lCoeficientesObjetivo.append(request.POST.get(f"c{i}", "0"))
         
         # Operadores entre termos da Função Objetivo (op_obj_1, op_obj_2, ...)
+        # Haverá N-1 operadores para N variáveis. O primeiro operador é entre c1x1 e c2x2.
         lOperadoresObjetivo = []
-        for i in range(nTotalVariaveisInt - 1):
-            lOperadoresObjetivo.append(request.POST.get(f"op_obj_{i + 1}", "+"))
+        for i in range(1, nTotalVariaveisInt): # op_obj_1, op_obj_2, ..., op_obj_{N-1}
+            lOperadoresObjetivo.append(request.POST.get(f"op_obj_{i}", "+"))
         
         # Dados das Restrições
         llListaCoeficientesRestricoes = [] 
         llListaOperadoresVarRestricoes = [] 
         lListaOperadoresRelacionaisRestricoesLatex = [] 
         lListaValoresRhsRestricoes = [] 
+        lListaSinaisPrimeiroCoefRestricao = []
 
         for r_idx in range(1, nTotalRestricoesInt + 1):
-            # Coeficientes para a restrição r_idx (r{r_idx}_c{v_idx})
+            sR_C1Sign = request.POST.get(f"r{r_idx}_c1_sign", "+")
+            lListaSinaisPrimeiroCoefRestricao.append(sR_C1Sign)
+
             lCoefsEstaRestricao = []
-            for v_idx in range(1, nTotalVariaveisInt + 1):
-                lCoefsEstaRestricao.append(request.POST.get(f"r{r_idx}_c{v_idx}", "0"))
+            if nTotalVariaveisInt > 0:
+                # Primeiro coeficiente da restrição
+                lCoefsEstaRestricao.append(request.POST.get(f"r{r_idx}_c1", "0"))
+                # Coeficientes restantes da restrição
+                for v_idx in range(2, nTotalVariaveisInt + 1):
+                    lCoefsEstaRestricao.append(request.POST.get(f"r{r_idx}_c{v_idx}", "0"))
             llListaCoeficientesRestricoes.append(lCoefsEstaRestricao)
 
             # Operadores entre variáveis para a restrição r_idx (r{r_idx}_op_var{op_v_idx})
+            # Haverá N-1 operadores para N termos. O primeiro é entre r_c1x1 e r_c2x2
             lOpsVarEstaRestricao = []
-            for op_v_idx in range(1, nTotalVariaveisInt): # N-1 operadores para N termos
+            for op_v_idx in range(1, nTotalVariaveisInt): 
                 lOpsVarEstaRestricao.append(request.POST.get(f"r{r_idx}_op_var_{op_v_idx}", "+"))
             llListaOperadoresVarRestricoes.append(lOpsVarEstaRestricao)
             
@@ -180,11 +196,16 @@ def submit_final(request):
         # 1. Função Objetivo
         # User wants to remove Z = but keep alignment for the expression itself.
         # "Minimizar" will be on the left, then an alignment point, then the expression.
-        obj_func_str = "\\text{" + sObjetivoSelecionado + "} & ~" # Add & for alignment after the text
-        for i in range(nTotalVariaveisInt):
-            obj_func_str += f"{lCoeficientesObjetivo[i]}x_{{{i + 1}}}"
-            if i < nTotalVariaveisInt - 1:
-                obj_func_str += f" {lOperadoresObjetivo[i]} "
+        obj_func_str = "\\text{" + sObjetivoSelecionado + "} & ~"
+        if nTotalVariaveisInt > 0:
+            sPrimeiroTermoObj = f"{lCoeficientesObjetivo[0]}x_{{1}}"
+            if sObjC1Sign == "-":
+                obj_func_str += f"- {sPrimeiroTermoObj}"
+            else: # Inclui o caso de "+" ou qualquer outro valor (embora o form só envie + ou -)
+                obj_func_str += f"{sPrimeiroTermoObj}" 
+            
+            for i in range(1, nTotalVariaveisInt): # Começa do segundo termo (índice 1 do array de coeficientes)
+                obj_func_str += f" {lOperadoresObjetivo[i-1]} {lCoeficientesObjetivo[i]}x_{{{i + 1}}}"
         partes_latex.append(obj_func_str)
 
         # 2. Constraints (incluindo "sujeito a:") e Não-negatividade
@@ -193,20 +214,32 @@ def submit_final(request):
             first_constraint_text_part = "\\text{sujeito a:} ~"
             # Construir a parte da equação da primeira restrição
             first_constraint_eq_part = ""
-            for v_idx in range(nTotalVariaveisInt):
-                first_constraint_eq_part += f"{llListaCoeficientesRestricoes[0][v_idx]}x_{{{v_idx + 1}}}"
-                if v_idx < nTotalVariaveisInt - 1:
-                    first_constraint_eq_part += f" {llListaOperadoresVarRestricoes[0][v_idx]} "
+            if nTotalVariaveisInt > 0:
+                sR0C1Sign = lListaSinaisPrimeiroCoefRestricao[0]
+                sPrimeiroTermoR0 = f"{llListaCoeficientesRestricoes[0][0]}x_{{1}}"
+                if sR0C1Sign == "-":
+                    first_constraint_eq_part += f"- {sPrimeiroTermoR0}"
+                else:
+                    first_constraint_eq_part += sPrimeiroTermoR0
+
+                for v_idx in range(1, nTotalVariaveisInt): # Começa do segundo termo
+                    first_constraint_eq_part += f" {llListaOperadoresVarRestricoes[0][v_idx-1]} {llListaCoeficientesRestricoes[0][v_idx]}x_{{{v_idx + 1}}}"
             first_constraint_eq_part += f" {lListaOperadoresRelacionaisRestricoesLatex[0]} {lListaValoresRhsRestricoes[0]}"
             partes_latex.append(f"{first_constraint_text_part} & {first_constraint_eq_part}")
 
             # Restrições subsequentes
             for r_idx in range(1, nTotalRestricoesInt):
                 constraint_str = "& " # Apenas o marcador de alinhamento e a equação
-                for v_idx in range(nTotalVariaveisInt):
-                    constraint_str += f"{llListaCoeficientesRestricoes[r_idx][v_idx]}x_{{{v_idx + 1}}}"
-                    if v_idx < nTotalVariaveisInt - 1:
-                        constraint_str += f" {llListaOperadoresVarRestricoes[r_idx][v_idx]} "
+                if nTotalVariaveisInt > 0:
+                    sR_C1Sign = lListaSinaisPrimeiroCoefRestricao[r_idx]
+                    sPrimeiroTermoR = f"{llListaCoeficientesRestricoes[r_idx][0]}x_{{1}}"
+                    if sR_C1Sign == "-":
+                        constraint_str += f"- {sPrimeiroTermoR}"
+                    else:
+                        constraint_str += sPrimeiroTermoR
+                    
+                    for v_idx in range(1, nTotalVariaveisInt): # Começa do segundo termo
+                        constraint_str += f" {llListaOperadoresVarRestricoes[r_idx][v_idx-1]} {llListaCoeficientesRestricoes[r_idx][v_idx]}x_{{{v_idx + 1}}}"
                 constraint_str += f" {lListaOperadoresRelacionaisRestricoesLatex[r_idx]} {lListaValoresRhsRestricoes[r_idx]}"
                 partes_latex.append(constraint_str)
             
@@ -312,7 +345,7 @@ def submit_final(request):
             # return response
 
             # Restore email sending logic
-            sEmailProfessor = "Marco@pucgoias.edu.br" 
+            sEmailProfessor = "danieldebrito2105@gmail.com"#"Marco@pucgoias.edu.br" 
             sEmailRemetente = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@example.com")
 
             sAssuntoEmail = f"Relatório Competição PPL - {sNomeUsuario}"
