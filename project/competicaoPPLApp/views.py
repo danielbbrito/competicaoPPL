@@ -345,7 +345,7 @@ def submit_final(request):
             # return response
 
             # Restore email sending logic
-            sEmailProfessor = "danieldebrito2105@gmail.com"#"Marco@pucgoias.edu.br" 
+            sEmailProfessor = "Marco@pucgoias.edu.br" 
             sEmailRemetente = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@example.com")
 
             sAssuntoEmail = f"Relatório Competição PPL - {sNomeUsuario}"
