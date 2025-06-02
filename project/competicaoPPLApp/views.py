@@ -363,8 +363,17 @@ def submit_final(request):
             # print(f"--- Returning PDF download: relatorio_ppl_{sNomeUsuario.replace(' ', '_')}.pdf ---")
             # return response
 
-            # Restore email sending logic
-            sEmailProfessor = "Marco@pucgoias.edu.br" 
+            # Enable PDF download
+            print("--- Preparing PDF for download ---")
+            response = HttpResponse(pdf_bytes, content_type="application/pdf")
+            response["Content-Disposition"] = f'attachment; filename="relatorio_ppl_{sNomeUsuario.replace(" ", "_")}.pdf"'
+            print(f"--- Returning PDF download: relatorio_ppl_{sNomeUsuario.replace(' ', '_')}.pdf ---")
+            messages.success(request, "Seu relatório foi gerado com sucesso e o download deve iniciar em breve.") # Add a message for the user
+            return response
+
+            # Disable email sending logic by commenting it out
+            """
+            sEmailProfessor = "danieldebrito2105@gmail.com" #"Marco@pucgoias.edu.br" 
             sEmailRemetente = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@example.com")
 
             sAssuntoEmail = f"Relatório Competição PPL - {sNomeUsuario}"
@@ -383,7 +392,7 @@ def submit_final(request):
                 messages.success(request, "Seu relatório foi submetido e enviado por e-mail com sucesso!")
                 print("--- Email sent successfully! ---")
                 # REDIRECT TO THANK YOU PAGE IF EMAIL IS SUCCESSFUL
-                request.session["download_initiated_flag"] = False # Ensure flag is not set for email path
+                # request.session["download_initiated_flag"] = False # Ensure flag is not set for email path
                 return redirect("thank_you_page") 
             except Exception as e_email:
                 print(f"Erro ao enviar o e-mail: {e_email}")
@@ -392,7 +401,7 @@ def submit_final(request):
                 # If email fails, we could offer download as fallback, or redirect to index with error.
                 # For now, just redirecting to index with an error message seems reasonable after an email failure.
                 return redirect("index") 
-
+            """
             # If emailing was active and successful, we would have redirected.
             # Since we are downloading directly, the return response for download is the end of this request.
             # The redirect("index") below was for the case where email was the main path.
